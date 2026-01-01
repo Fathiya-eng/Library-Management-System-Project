@@ -1,0 +1,197 @@
+CREATE DATABASE LibraryManagementSystem;
+USE LibraryManagementSystem;
+
+CREATE TABLE Library (
+    LibraryID INT IDENTITY(1,1) PRIMARY KEY,
+    Name NVARCHAR(100) NOT NULL UNIQUE,
+    Location NVARCHAR(150) NOT NULL,
+    Contact_Number NVARCHAR(20) NOT NULL,
+    Established_Year INT
+);
+
+
+CREATE TABLE Staff (
+    StaffID INT IDENTITY(1,1) PRIMARY KEY NOT NULL,
+    Full_Name NVARCHAR(150),
+    Position NVARCHAR(100),
+    Contact_Number NVARCHAR(20),
+    LibraryID INT NOT NULL,
+FOREIGN KEY (LibraryID) REFERENCES Library(LibraryID)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+);
+
+CREATE TABLE Member (
+    MemberID INT IDENTITY(1,1) PRIMARY KEY,
+    Full_Name NVARCHAR(150),
+    Email NVARCHAR(100) NOT NULL UNIQUE,
+    Phone_Number NVARCHAR(20),
+    Membership_Start_Date DATE NOT NULL
+);
+
+CREATE TABLE Book (
+    BookID INT IDENTITY(1,1) PRIMARY KEY,
+    ISBN NVARCHAR(20) NOT NULL UNIQUE,
+    Title NVARCHAR(200) NOT NULL,
+    Genre NVARCHAR(50) NOT NULL,
+    Price DECIMAL(10,2) CHECK (Price > 0),
+    Availability_Status BIT DEFAULT 1,  -- 1 = available, 0 = loaned out
+    Shelf_Location NVARCHAR(50) NOT NULL,
+    Rating INT CHECK (Rating BETWEEN 1 AND 5),
+    Comments NVARCHAR(300) DEFAULT 'No comments',
+    Review_Date DATE,
+    LibraryID INT NOT NULL,
+    CONSTRAINT CK_Book_Genre CHECK (Genre IN ('Fiction', 'Non-fiction', 'Reference', 'Children')),
+    CONSTRAINT FK_Book_Library FOREIGN KEY (LibraryID) REFERENCES Library(LibraryID)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+CREATE TABLE Loan (
+    LoanID INT IDENTITY(1,1) PRIMARY KEY,
+    Loan_Date DATE NOT NULL,
+    Due_Date DATE NOT NULL,
+    Return_Date DATE,
+    Status NVARCHAR(20) NOT NULL DEFAULT 'Issued',
+    MemberID INT NOT NULL,
+    BookID INT NOT NULL,
+
+    CONSTRAINT CK_Loan_Status
+        CHECK (Status IN ('Issued', 'Returned', 'Overdue')),
+
+    CONSTRAINT CK_Loan_ReturnDate
+        CHECK (Return_Date IS NULL OR Return_Date >= Loan_Date),
+
+    CONSTRAINT FK_Loan_Member FOREIGN KEY (MemberID) REFERENCES Member(MemberID)
+        ON DELETE CASCADE 
+        ON UPDATE CASCADE,
+
+    CONSTRAINT FK_Loan_Book FOREIGN KEY (BookID) REFERENCES Book(BookID)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+
+CREATE TABLE Payment (
+    PaymentID INT IDENTITY(1,1) PRIMARY KEY,
+    Payment_Date DATE NOT NULL,
+    Amount DECIMAL(10,2) NOT NULL CHECK (Amount > 0),
+    Payment_Method NVARCHAR(50),
+    LoanID INT NOT NULL,
+
+    CONSTRAINT FK_Payment_Loan FOREIGN KEY (LoanID) REFERENCES Loan(LoanID)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+ALTER TABLE Book
+ALTER COLUMN MemberID INT NULL;
+
+ALTER TABLE Member
+ALTER COLUMN Email NVARCHAR(100) NULL;
+
+ALTER TABLE Member
+ALTER COLUMN Phone_Number NVARCHAR(20) NULL;
+
+
+---------------------------
+-----Inserting------------- 
+---------------------------
+INSERT INTO Library (Name, Location, Contact_Number, Established_Year)
+VALUES
+('Central Library', 'Muscat, Oman', '24445555', 1995),
+('Al Hajar Library', 'Nizwa, Oman', '24446666', 2005),
+('Sultan Qaboos Library', 'Salalah, Oman', '24447777', 2010);
+
+INSERT INTO Staff (Full_Name, Position, Contact_Number, LibraryID)
+VALUES
+('Ahmed Al Balushi', 'Librarian', '99001122', 1),
+('Fatima Al Harthy', 'Assistant Librarian', '99003344', 2),
+('Khalid Al Siyabi', 'Library Manager', '99005566', 3);
+
+INSERT INTO Member (Full_Name, Email, Phone_Number, Membership_Start_Date)
+VALUES
+('Sara Al Maskari', 'sara.maskari@email.com', '9711001122', '2022-06-15'),
+('Omar Al Rawahi', 'omar.rawahi@email.com', '9711002233', '2023-02-20'),
+('Laila Al Lawati', 'laila.lawati@email.com', '9711003344', '2021-09-10');
+
+INSERT INTO Book (ISBN, Title, Genre, Price, Availability_Status, Shelf_Location, Rating, Comments, Review_Date, LibraryID)
+VALUES
+('978-1234567890', 'Data Structures in Python', 'Reference', 300, 1, 'A1', 5, 'Excellent book for beginners', '2019-05-20', 1),
+('978-0987654321', 'Fictional Worlds', 'Fiction', 150, 1, 'B2', 4, 'Very engaging', '2021-08-15', 2),
+('978-1122334455', 'Children Stories', 'Children', 80, 1, 'C3', 5, 'Fun and educational', '2020-03-10', 3);
+
+INSERT INTO Loan (Loan_Date, Due_Date, Status, MemberID, BookID)
+VALUES
+('2023-12-01', '2023-12-15', 'Returned', 1, 1),
+('2023-12-05', '2023-12-19', 'Issued', 2, 2),
+('2023-12-10', '2023-12-24', 'Issued', 3, 3);
+
+INSERT INTO Payment (Payment_Date, Amount, Payment_Method, LoanID)
+VALUES
+('2023-12-02', 15.00, 'Cash', 1),
+('2023-12-06', 10.00, 'Card', 2),
+('2023-12-11', 5.00, 'Online', 3);
+
+--------------------------
+----Select----------------
+--------------------------
+SELECT * FROM Book;
+SELECT * FROM Library;
+SELECT * FROM Staff;
+SELECT * FROM Member;
+SELECT * FROM Loan;
+SELECT * FROM Payment;
+
+SELECT Title, Genre, Availability_Status FROM Book;
+SELECT Full_Name, Email, Membership_Start_Date FROM Member;
+SELECT Title, Price AS BookPrice FROM Book;
+SELECT * FROM Book
+WHERE Price > 250;
+SELECT * FROM Member
+WHERE Membership_Start_Date < '2023-01-01';
+SELECT * FROM Book
+WHERE YEAR(Review_Date) > 2018;
+SELECT * FROM Book
+ORDER BY Price DESC;
+SELECT MAX(Price) AS MaxPrice,
+       MIN(Price) AS MinPrice,
+       AVG(Price) AS AvgPrice
+FROM Book;
+SELECT COUNT(*) AS TotalBooks FROM Book;
+SELECT * FROM Member
+WHERE Email IS NULL;
+SELECT * FROM Book
+WHERE Title LIKE '%Data%';
+
+SET IDENTITY_INSERT Member ON;
+
+INSERT INTO Member (MemberID, Full_Name, Email, Phone_Number, Membership_Start_Date)
+VALUES
+(405, 'Fathiya Alfahdi', 'fathiya.alfahdi@email.com', '91234567', GETDATE());
+
+SET IDENTITY_INSERT Member OFF;
+
+INSERT INTO Loan (Loan_Date, Due_Date, Status, MemberID, BookID)
+VALUES (GETDATE(), DATEADD(DAY, 14, GETDATE()), 'Issued', 405, 1011);
+
+INSERT INTO Member (Full_Name, Email, Phone_Number, Membership_Start_Date)
+VALUES ('wafa', NULL, NULL, GETDATE());
+
+UPDATE Loan
+SET Return_Date = GETDATE(),
+    Status = 'Returned'
+WHERE MemberID = 405 AND BookID = 1011;
+
+UPDATE Book
+SET Price = Price * 1.05
+WHERE Price < 200;
+
+ALTER TABLE Member ADD Status NVARCHAR(20) DEFAULT 'Inactive';
+
+UPDATE Member
+SET Status = 'Active'
+WHERE Membership_Start_Date >= DATEADD(MONTH, -1, GETDATE());
+
+DELETE FROM Member
+WHERE MemberID NOT IN (SELECT DISTINCT MemberID FROM Loan);
