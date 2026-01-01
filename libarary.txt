@@ -195,3 +195,137 @@ WHERE Membership_Start_Date >= DATEADD(MONTH, -1, GETDATE());
 
 DELETE FROM Member
 WHERE MemberID NOT IN (SELECT DISTINCT MemberID FROM Loan);
+
+---------------------------
+----Join-------------------
+---------------------------
+SELECT 
+    L.LibraryID,
+    L.Name AS Library_Name,
+    S.Full_Name AS Manager_Name
+FROM Library L
+JOIN Staff S
+    ON L.LibraryID = S.LibraryID
+WHERE S.Position = 'Library Manager';
+
+
+SELECT 
+    L.Name AS Library_Name,
+    B.Title AS Book_Title
+FROM Library L
+JOIN Book B
+    ON L.LibraryID = B.LibraryID
+WHERE B.Availability_Status = 1;
+
+
+SELECT 
+    M.MemberID,
+    M.Full_Name,
+    M.Email,
+    M.Phone_Number,
+    L.LoanID,
+    L.Loan_Date,
+    L.Due_Date,
+    L.Return_Date,
+    L.Status
+FROM Member M
+LEFT JOIN Loan L
+    ON M.MemberID = L.MemberID;
+
+
+SELECT 
+    B.BookID,
+    B.Title,
+    L.Name AS Library_Name,
+    L.Location
+FROM dbo.Book B
+JOIN dbo.Library L
+    ON B.LibraryID = L.LibraryID
+WHERE L.Location IN ('Muscat, Oman', 'Nizwa, Oman');
+
+
+SELECT 
+    BookID,
+    Title,
+    Genre,
+    Price
+FROM Book
+WHERE Title LIKE 'D%';
+
+
+SELECT DISTINCT
+    M.MemberID,
+    M.Full_Name
+FROM Member M
+JOIN Loan L
+    ON M.MemberID = L.MemberID
+JOIN Book B
+    ON L.BookID = B.BookID
+WHERE B.Price BETWEEN 100 AND 300;
+
+
+SELECT DISTINCT M.MemberID, M.Full_Name 
+FROM Member M
+JOIN Loan L
+    ON M.MemberID = L.MemberID
+JOIN Book B
+    ON L.BookID = B.BookID
+WHERE 
+    B.Title = 'Data Structures in Python'
+    AND L.Status = 'Returned';
+
+
+SELECT DISTINCT M.MemberID, M.Full_Name
+FROM Member M
+JOIN Loan L
+    ON M.MemberID = L.MemberID
+JOIN Book B
+    ON L.BookID = B.BookID
+JOIN Library Lib
+    ON B.LibraryID = Lib.LibraryID
+JOIN Staff S
+    ON Lib.LibraryID = S.LibraryID
+WHERE S.Full_Name = 'Fatima Al Harthy';
+
+
+SELECT 
+    M.Full_Name AS Member_Name,
+    B.Title AS Book_Title
+FROM Member M
+JOIN Loan L
+    ON M.MemberID = L.MemberID
+JOIN Book B
+    ON L.BookID = B.BookID
+ORDER BY B.Title;
+
+
+SELECT 
+    B.Title,
+    L.Name AS Library_Name,
+    S.Full_Name AS Manager_Name,
+    B.Shelf_Location
+FROM Book B
+JOIN Library L
+    ON B.LibraryID = L.LibraryID
+JOIN Staff S
+    ON L.LibraryID = S.LibraryID
+WHERE 
+    L.Name = 'Sultan Qaboos Library'
+    AND S.Position = 'Library Manager';
+
+
+SELECT StaffID, Full_Name, Position
+FROM Staff
+WHERE Position = 'Library Manager';
+
+
+SELECT 
+    M.Full_Name AS Member_Name,
+    B.Title AS Book_Title,
+    B.Rating,
+    B.Comments
+FROM Member M
+LEFT JOIN Loan L
+    ON M.MemberID = L.MemberID
+LEFT JOIN Book B
+    ON L.BookID = B.BookID;
